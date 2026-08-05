@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endereços Gov - Protótipo Dinâmico Completo</title>
+    <style>
+        :root {
+            --gov-blue: #1351b4;
+            --gov-blue-disabled: #8faadc;
+            --gov-dark-blue: #0c326f;
+            --border-color: #d1d5db;
+            --bg-color: #f8f9fa;
+            --text-main: #333333;
+            --text-muted: #6b7280;
+            --gov-yellow: #ffc107;
+            --gov-yellow-text: #212529;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #000000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        .modal-container { 
+            width: 100%; 
+            max-width: 585px; 
+            max-height: 95vh;
+            overflow-y: auto;
+            background-color: #ffffff; 
+            padding: 30px;
+            position: relative; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .modal-container::-webkit-scrollbar { width: 6px; }
+        .modal-container::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+
+        /* Cabeçalho do Modal */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header h2 { margin: 0; font-size: 20px; color: var(--text-main); font-weight: bold; }
+        .close-btn { color: var(--gov-blue); font-size: 20px; font-weight: bold; cursor: pointer; }
+
+        /* Informações do Cidadão */
+        .citizen-info { margin-bottom: 30px; }
+        .citizen-name { font-weight: bold; font-size: 15px; color: var(--text-main); }
+        .citizen-cpf { font-size: 14px; color: var(--text-muted); font-style: italic; margin-top: 4px; }
+
+        /* Seções de Dados */
+        .data-section { margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
+        .section-title { font-size: 13px; font-weight: bold; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; }
+        .status-text { font-size: 14px; color: var(--text-muted); font-style: italic; margin-bottom: 10px; }
+
+        /* Botões de Ação (+ Selecionar) */
+        .btn-action { background: none; border: none; color: var(--gov-blue); font-weight: bold; font-size: 15px; cursor: pointer; display: flex; align-items: center; padding: 0; }
+        .btn-action span { font-size: 22px; margin-right: 8px; font-weight: bold; }
+        .btn-action:hover { text-decoration: underline; }
+
+        /* View de Seleção (Listas Expansíveis) */
+        .selection-view { display: none; padding-top: 10px; animation: fadeIn 0.3s ease-in-out; }
+        .helper-text { font-size: 13px; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4; }
+        
+        .radio-group { max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 12px; }
+        .radio-group::-webkit-scrollbar { width: 6px; }
+        .radio-group::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+        
+        .radio-option { display: flex; align-items: flex-start; padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .radio-option:hover { background-color: var(--bg-color); }
+        .radio-option:last-child { border-bottom: none; }
+        .radio-option input[type="radio"] { margin-top: 3px; margin-right: 12px; transform: scale(1.2); cursor: pointer; }
+        
+        /* Classe para itens do histórico que já foram selecionados */
+        .radio-option.disabled { opacity: 0.5; cursor: not-allowed; background-color: #f1f1f1; }
+        .radio-option.disabled input[type="radio"] { cursor: not-allowed; }
+        
+        .radio-label { font-size: 14px; color: var(--text-main); width: 100%; display: flex; flex-direction: column; }
+        .radio-label-row { display: flex; align-items: center; justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
+        
+        .badge-gov { background-color: var(--gov-blue); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        
+        .btn-action-add { background: none; border: none; color: var(--gov-blue); font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 15px; padding: 10px 0; }
+        .btn-action-add span { font-size: 18px; margin-right: 6px; }
+        .btn-action-add:hover { text-decoration: underline; }
+
+        /* Formulários de Adição de Novo Dado */
+        .add-form-view { display: none; padding-top: 10px; animation: fadeIn 0.3s ease-in-out; }
+        .form-title { font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 20px; display: block; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 5px; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; font-family: inherit; }
+        
+        .checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; margin-top: 5px;}
+        .checkbox-group input { margin-top: 2px; transform: scale(1.2); cursor: pointer; }
+        .checkbox-group label { font-size: 13px; color: var(--text-main); line-height: 1.3; cursor: pointer; font-weight: 500;}
+
+        /* Botões Cancelar / Confirmar */
+        .action-buttons { display: flex; justify-content: space-between; gap: 15px; margin-top: 20px;}
+        .btn-outline { flex: 1; background-color: #ffffff; border: 1px solid var(--gov-blue); color: var(--gov-blue); padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-outline:hover { background-color: #f1f5f9; }
+        .btn-solid { flex: 1; background-color: var(--gov-blue); border: none; color: white; padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-solid:disabled { background-color: var(--gov-blue-disabled); cursor: not-allowed; }
+        .btn-solid:not(:disabled):hover { background-color: var(--gov-dark-blue); }
+
+        /* Botão Histórico */
+        .btn-historico { background: none; border: none; color: var(--gov-blue); font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; padding: 0; margin-bottom: 20px; margin-top: 5px; }
+        .btn-historico span { font-size: 18px; margin-right: 6px; }
+        .btn-historico:hover { text-decoration: underline; }
+
+        /* View Selecionada (Listagem de Dados Confirmados) */
+        .selected-view { display: none; animation: fadeIn 0.3s ease-in-out; }
+        
+        .selected-box { 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            background-color: #ffffff; 
+            margin-bottom: 12px; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .selected-item {
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .selected-item:not(:first-child) {
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .selected-text { 
+            font-size: 15px; 
+            color: var(--text-main); 
+            font-weight: 400; 
+            line-height: 1.4; 
+            flex: 1; 
+            word-break: break-word;
+        }
+        
+        .selected-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0; 
+        }
+
+        .role-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .badge-warning { 
+            background-color: var(--gov-yellow); 
+            color: var(--gov-yellow-text); 
+            padding: 4px 10px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            white-space: nowrap;
+        }
+
+        .icon-edit { 
+            color: var(--gov-blue); 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: 0.2s;
+        }
+        .icon-edit:hover { opacity: 0.7; }
+
+        /* Rodapé com botão confirmar global */
+        .footer { display: flex; justify-content: flex-end; margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+        .btn-confirmar-geral { background-color: var(--gov-blue-disabled); color: white; border: none; padding: 12px 28px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: not-allowed; display: flex; align-items: center; transition: 0.2s; }
+        .btn-confirmar-geral span { margin-right: 8px; font-size: 16px; }
+        .btn-confirmar-geral.active { background-color: var(--gov-blue); cursor: pointer; }
+        .btn-confirmar-geral.active:hover { background-color: var(--gov-dark-blue); transform: scale(1.02); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="modal-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h2>Dados do Cidadão</h2>
+            <div class="close-btn">&#x2716;</div>
+        </div>
+
+        <!-- Dados do Cidadão -->
+        <div class="citizen-info">
+            <div class="citizen-name" id="cit-name">João Oliveira da Silva</div>
+            <div class="citizen-cpf" id="cit-cpf">CPF 345.678.901-23</div>
+        </div>
+
+        <!-- ================= SEÇÃO E-MAIL ================= -->
+        <div class="data-section" id="section-email">
+            <div class="section-title">E-MAIL</div>
+            
+            <div id="view-default-email">
+                <div class="status-text">Aguardando confirmação</div>
+                <button class="btn-action" onclick="abrirSelecao('email')"><span>+</span> Selecionar e-mail</button>
+            </div>
+
+            <!-- Lista de Seleção -->
+            <div class="selection-view" id="view-selection-email">
+                <p class="helper-text" id="helper-email"></p>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="email" value="mariapoana23@gmail.com" data-gov="true" onchange="habilitarConfirmacao('email')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>mariapoana23@gmail.com</span>
+                                <span class="badge-gov">Atual no gov.br</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="email" value="mariapoana42@gmail.com" data-gov="false" onchange="habilitarConfirmacao('email')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>mariapoana42@gmail.com</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="email" value="contato.maria@empresa.com.br" data-gov="false" onchange="habilitarConfirmacao('email')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>contato.maria@empresa.com.br</span>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <button class="btn-action-add" onclick="abrirAddForm('email', false)"><span>+</span> Adicionar um novo e-mail</button>
+                <div class="action-buttons">
+                    <button class="btn-outline" onclick="cancelarSelecao('email')">&#x2716; Cancelar</button>
+                    <button class="btn-solid" id="btn-confirm-email" onclick="confirmarSelecao('email')" disabled>&#x2714; Confirmar</button>
+                </div>
+            </div>
+
+            <!-- Formulário Adicionar Novo / Editar -->
+            <div class="add-form-view" id="view-add-email">
+                <span class="form-title" id="title-add-email">Adicionar e-mail</span>
+                <div class="form-group">
+                    <label>Endereço de e-mail</label>
+                    <input type="email" id="input-add-email" class="form-control" placeholder="Digite seu novo e-mail" oninput="validarAddForm('email')">
+                </div>
+                <button class="btn-historico" onclick="voltarParaHistorico('email')"><span>+</span> Selecionar no histórico</button>
+                <div class="action-buttons">
+                    <button class="btn-outline" onclick="voltarParaHistorico('email')">&#x2716; Cancelar</button>
+                    <button class="btn-solid" id="btn-submit-email" onclick="confirmarAddForm('email')" disabled>&#x2714; Confirmar</button>
+                </div>
+            </div>
+
+            <div class="selected-view" id="view-selected-email">
+                <div class="selected-box" id="val-email"></div>
+                <button class="btn-action" id="btn-add-other-email" onclick="abrirSelecao('email')"><span>+</span> Selecionar outro e-mail</button>
+            </div>
+        </div>
+
+        <!-- ================= SEÇÃO TELEFONE ================= -->
+        <div class="data-section" id="section-telefone">
+            <div class="section-title">TELEFONE</div>
+            
+            <div id="view-default-telefone">
+                <div class="status-text">Aguardando confirmação</div>
+                <button class="btn-action" onclick="abrirSelecao('telefone')"><span>+</span> Selecionar telefone</button>
+            </div>
+
+            <!-- Lista de Seleção -->
+            <div class="selection-view" id="view-selection-telefone">
+                <p class="helper-text" id="helper-telefone"></p>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="telefone" value="(22) 88888-9999" data-gov="true" onchange="habilitarConfirmacao('telefone')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>(22) 88888-9999</span>
+                                <span class="badge-gov">Atual no gov.br</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="telefone" value="(21) 99999-8888" data-gov="false" onchange="habilitarConfirmacao('telefone')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>(21) 99999-8888</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="telefone" value="(11) 97777-6666" data-gov="false" onchange="habilitarConfirmacao('telefone')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>(11) 97777-6666</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="telefone" value="(31) 33333-2222" data-gov="false" onchange="habilitarConfirmacao('telefone')">
+                        <div class="radio-label">
+                            <div class="radio-label-row">
+                                <span>(31) 33333-2222</span>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <button class="btn-action-add" onclick="abrirAddForm('telefone', false)"><span>+</span> Adicionar um novo telefone</button>
+                <div class="action-buttons">
+                    <button class="btn-outline" onclick="cancelarSelecao('telefone')">&#x2716; Cancelar</button>
+                    <button class="btn-solid" id="btn-confirm-telefone" onclick="confirmarSelecao('telefone')" disabled>&#x2714; Confirmar</button>
+                </div>
+            </div>
+
+            <!-- Formulário Adicionar Novo / Editar -->
+            <div class="add-form-view" id="view-add-telefone">
+                <span class="form-title" id="title-add-telefone">Adicionar telefone</span>
+                <div class="form-group">
+                    <label>Número</label>
+                    <input type="tel" id="input-add-telefone" class="form-control" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this); validarAddForm('telefone')">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="check-gov-comms" onchange="validarAddForm('telefone')">
+                    <label for="check-gov-comms">Cidadã(o) declara que aceita receber comunicações do governo neste número.</label>
+                </div>
+                <button class="btn-historico" onclick="voltarParaHistorico('telefone')"><span>+</span> Selecionar no histórico</button>
+                <div class="action-buttons">
+                    <button class="btn-outline" onclick="voltarParaHistorico('telefone')">&#x2716; Cancelar</button>
+                    <button class="btn-solid" id="btn-submit-telefone" onclick="confirmarAddForm('telefone')" disabled>&#x2714; Confirmar</button>
+                </div>
+            </div>
+
+            <div class="selected-view" id="view-selected-telefone">
+                <div class="selected-box" id="val-telefone"></div>
+                <button class="btn-action" id="btn-add-other-telefone" onclick="abrirSelecao('telefone')"><span>+</span> Selecionar outro telefone</button>
+            </div>
+        </div>
+
+        <!-- ================= SEÇÃO ENDEREÇO ================= -->
+        <div class="data-section" id="section-endereco">
+            <div class="section-title">ENDEREÇO</div>
+            
+            <div id="view-default-endereco">
+                <div class="status-text">Aguardando confirmação</div>
+                <button class="btn-action" onclick="abrirSelecao('endereco')"><span>+</span> Selecionar endereço</button>
+            </div>
+
+            <!-- Lista de Seleção -->
+            <div class="selection-view" id="view-selection-endereco">
+                <p class="helper-text" id="helper-endereco"></p>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="endereco" value="Rua do Alto, 324 - Centro - Curitiba - PR<br><span style='color:var(--text-muted); font-size:12px; display:block; margin-top:3px;'>CEP 12345-321</span>" data-gov="true" onchange="habilitarConfirmacao('endereco')">
+                        <div class="radio-label">
+                            <span>Rua do Alto, 324 - Centro - Curitiba - PR</span>
+                            <span style="color:var(--text-muted); font-size:12px; display:block; margin-top:3px;">CEP 12345-321</span>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="endereco" value="Rua das Flores, 324 - Centro - Curitiba - PR<br><span style='color:var(--text-muted); font-size:12px; display:block; margin-top:3px;'>CEP 12345-321</span>" data-gov="false" onchange="habilitarConfirmacao('endereco')">
+                        <div class="radio-label">
+                            <span>Rua das Flores, 324 - Centro - Curitiba - PR</span>
+                            <span style="color:var(--text-muted); font-size:12px; display:block; margin-top:3px;">CEP 12345-321</span>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="endereco" value="Av. Marcos Rodrigues, 500 - Batel - Curitiba - PR<br><span style='color:var(--text-muted); font-size:12px; display:block; margin-top:3px;'>CEP 80230-000</span>" data-gov="false" onchange="habilitarConfirmacao('endereco')">
+                        <div class="radio-label">
+                            <span>Av. Marcos Rodrigues, 500 - Batel - Curitiba - PR</span>
+                            <span style="color:var(--text-muted); font-size:12px; display:block; margin-top:3px;">CEP 80230-000</span>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="endereco" value="Rua XV de Novembro, 200 - Centro - Curitiba - PR<br><span style='color:var(--text-muted); font-size:12px; display:block; margin-top:3px;'>CEP 80020-310</span>" data-gov="false" onchange="habilitarConfirmacao('endereco')">
+                        <div class="radio-label">
+                            <span>Rua XV de Novembro, 200 - Centro - Curitiba - PR</span>
+                            <span style="color:var(--text-muted); font-size:12px; display:block; margin-top:3px;">CEP 80020-310</span>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="endereco" value="Al. Doutor Muricy, 50 - Água Verde - Curitiba - PR<br><span style='color:var(--text-muted); font-size:12px; display:block; margin-top:3px;'>CEP 80240-020</span>" data-gov="false" onchange="habilitarConfirmacao('endereco')">
+                        <div class="radio-label">
+                            <span>Al. Doutor Muricy, 50 - Água Verde - Curitiba - PR</span>
+                            <span style="color:var(--text-muted); font-size:12px; display:block; margin-top:3px;">CEP 80240-020</span>
+                        </div>
+                    </label>
+                </div>
+                <button class="btn-action-add" onclick="abrirAddForm('endereco', false)"><span>+</span> Adicionar um novo endereço</button>
+                <div class="action-buttons">
+                    <button class="btn-outline" onclick="cancelarSelecao('endereco')">&#x2716; Cancelar</button>
+                    <button class="btn-solid" id="btn-confirm-endereco" onclick="confirmarSelecao('endereco')" disabled>&#x2714; Confirmar</button>
+                </div>
+            </div>
+
+            <!-- Formulário Adicionar Novo / Editar (Com busca de CEP) -->
+            <div class="add-form-view" id="view-add-endereco">
+                <span class="form-title" id="title-add-endereco">Adicionar endereço</span>
+                <div class="form-group">
+                    <label>CEP</label>
+                    <input type="text" id="input-add-cep" class="form-control" placeholder="00000-000" oninput="formatarCEP(this); validarAddForm('endereco'); buscarCEP(this.value)">
+                </div>
+                <button class="btn-historico" onclick="voltarParaHistorico('endereco')"><span>+</span> Selecionar no histórico</button>
+                
+                <!-- Campos ocultos até o CEP ser preenchido -->
+                <div id="address-extra-fields" style="display: none; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Logradouro</label>
+                        <input type="text" id="input-add-logradouro" class="form-control" placeholder="Ex: Rua, Av, Travessa..." oninput="validarAddForm('endereco')">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Número</label>
+                            <input type="text" id="input-add-numero" class="form-control" placeholder="Ex: 324" oninput="validarAddForm('endereco')">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Complemento</label>
+                            <input type="text" id="input-add-complemento" class="form-control" placeholder="Opcional">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Bairro</label>
+                        <input type="text" id="input-add-bairro" class="form-control" oninput="validarAddForm('endereco')">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Cidade</label>
+                            <input type="text" id="input-add-cidade" class="form-control" oninput="validarAddForm('endereco')">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Estado</label>
+                            <input type="text" id="input-add-estado" class="form-control" oninput="validarAddForm('endereco')">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-outline" onclick="voltarParaHistorico('endereco')">&#x2716; Cancelar</button>
+                    <button class="btn-solid" id="btn-submit-endereco" onclick="confirmarAddForm('endereco')" disabled>&#x2714; Confirmar</button>
+                </div>
+            </div>
+
+            <div class="selected-view" id="view-selected-endereco">
+                <div class="selected-box" id="val-endereco"></div>
+                <button class="btn-action" id="btn-add-other-endereco" onclick="abrirSelecao('endereco')"><span>+</span> Selecionar outro endereço</button>
+            </div>
+        </div>
+
+        <!-- Botão Confirmar Geral -->
+        <div class="footer">
+            <button class="btn-confirmar-geral" id="btn-confirmar-geral" disabled>
+                <span>&#x2714;</span> Confirmar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Armazena todas as seleções feitas
+        let selecoes = {
+            email: [],
+            telefone: [],
+            endereco: []
+        };
+
+        // --- LÓGICA DAS LISTAS DE SELEÇÃO ---
+
+        function atualizarHelperText(tipo) {
+            const p = document.getElementById(`helper-${tipo}`);
+            if (selecoes[tipo].length > 0) {
+                if (tipo === 'email') p.innerHTML = "Selecione o e-mail <strong>secundário</strong> ou adicione um novo.";
+                if (tipo === 'telefone') p.innerHTML = "Selecione o telefone <strong>secundário</strong> ou adicione um novo.";
+                if (tipo === 'endereco') p.innerHTML = "Selecione o seu <strong>outro</strong> endereço ou adicione um novo.";
+            } else {
+                if (tipo === 'email') p.innerHTML = "Encontramos <strong>3</strong> endereços de e-mail em seu histórico. Selecione o e-mail principal ou adicione um novo.";
+                if (tipo === 'telefone') p.innerHTML = "Encontramos <strong>4</strong> telefones em seu histórico. Selecione o telefone principal ou adicione um novo.";
+                if (tipo === 'endereco') p.innerHTML = "Encontramos <strong>5</strong> endereços em seu histórico. Selecione seu endereço Residencial ou adicione um novo.";
+            }
+        }
+
+        function abrirSelecao(tipo) {
+            document.getElementById(`view-default-${tipo}`).style.display = 'none';
+            document.getElementById(`view-selected-${tipo}`).style.display = 'none';
+            document.getElementById(`view-add-${tipo}`).style.display = 'none';
+            document.getElementById(`view-selection-${tipo}`).style.display = 'block';
+
+            atualizarHelperText(tipo);
+
+            const radios = document.querySelectorAll(`input[name="${tipo}"]`);
+            radios.forEach(radio => {
+                const optionDiv = radio.closest('.radio-option');
+                const isSelected = selecoes[tipo].some(s => s.value === radio.value);
+                
+                // Em vez de ocultar, exibe todos, mas bloqueia o clique nos já selecionados
+                optionDiv.style.display = 'flex';
+                if (isSelected) {
+                    radio.disabled = true;
+                    optionDiv.classList.add('disabled');
+                } else {
+                    radio.disabled = false;
+                    optionDiv.classList.remove('disabled');
+                }
+            });
+
+            document.getElementById(`btn-confirm-${tipo}`).disabled = true;
+            const checked = document.querySelector(`input[name="${tipo}"]:checked`);
+            if(checked) checked.checked = false;
+        }
+
+        function habilitarConfirmacao(tipo) {
+            document.getElementById(`btn-confirm-${tipo}`).disabled = false;
+        }
+
+        function cancelarSelecao(tipo) {
+            document.getElementById(`view-selection-${tipo}`).style.display = 'none';
+            if (selecoes[tipo].length > 0) {
+                document.getElementById(`view-selected-${tipo}`).style.display = 'block';
+            } else {
+                document.getElementById(`view-default-${tipo}`).style.display = 'block';
+            }
+        }
+
+        function confirmarSelecao(tipo) {
+            const selectedRadio = document.querySelector(`input[name="${tipo}"]:checked`);
+            if (selectedRadio && !selectedRadio.disabled) {
+                const isGov = selectedRadio.getAttribute('data-gov') === 'true';
+                adicionarDadoNoArray(tipo, selectedRadio.value, isGov);
+            }
+        }
+
+        // --- LÓGICA DO FORMULÁRIO "ADICIONAR NOVO" E EDIÇÃO ---
+
+        function abrirAddForm(tipo, isUpdate = false, roleIndex = -1) {
+            document.getElementById(`view-selection-${tipo}`).style.display = 'none';
+            document.getElementById(`view-selected-${tipo}`).style.display = 'none';
+            document.getElementById(`view-add-${tipo}`).style.display = 'block';
+
+            // Ajusta o título com a regra de Principal/Secundário e Atualizar/Adicionar
+            let currentIndex = roleIndex !== -1 ? roleIndex : selecoes[tipo].length;
+            let tipoLabel = currentIndex === 0 ? 'principal' : 'secundário';
+            
+            if (tipo === 'endereco') {
+                tipoLabel = currentIndex === 0 ? 'Residencial' : 'Outro';
+            }
+            
+            let textTipo = tipo === 'endereco' ? 'endereço' : (tipo === 'email' ? 'e-mail' : 'telefone');
+            let acao = isUpdate ? 'Atualizar' : 'Adicionar';
+            document.getElementById(`title-add-${tipo}`).innerText = `${acao} ${textTipo} ${tipoLabel}`;
+
+            // Limpa os campos
+            if (tipo === 'email') document.getElementById('input-add-email').value = '';
+            if (tipo === 'telefone') {
+                document.getElementById('input-add-telefone').value = '';
+                document.getElementById('check-gov-comms').checked = false;
+            }
+            if (tipo === 'endereco') {
+                document.getElementById('input-add-cep').value = '';
+                document.getElementById('input-add-logradouro').value = '';
+                document.getElementById('input-add-numero').value = '';
+                document.getElementById('input-add-complemento').value = '';
+                document.getElementById('input-add-bairro').value = '';
+                document.getElementById('input-add-cidade').value = '';
+                document.getElementById('input-add-estado').value = '';
+                document.getElementById('address-extra-fields').style.display = 'none';
+            }
+            validarAddForm(tipo);
+        }
+
+        function voltarParaHistorico(tipo) {
+            document.getElementById(`view-add-${tipo}`).style.display = 'none';
+            abrirSelecao(tipo);
+        }
+
+        // --- MÁSCARAS E BUSCA DE CEP ---
+
+        function formatarCEP(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+            }
+            input.value = value.substring(0, 9);
+            
+            // Exibe a parte estendida do formulário apenas quando o CEP estiver completo
+            if (input.value.length === 9) {
+                document.getElementById('address-extra-fields').style.display = 'block';
+            }
+        }
+
+        function mascaraTelefone(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.substring(0, 11);
+            if (v.length > 2) v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+            if (v.length > 9) v = v.replace(/(\d{5})(\d{4})$/, '$1-$2');
+            else if (v.length > 8) v = v.replace(/(\d{4})(\d{0,4})$/, '$1-$2');
+            input.value = v;
+        }
+
+        async function buscarCEP(cep) {
+            let cepLimpo = cep.replace(/\D/g, '');
+            if (cepLimpo.length === 8) {
+                try {
+                    let response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+                    let data = await response.json();
+                    
+                    if (!data.erro) {
+                        document.getElementById('input-add-logradouro').value = data.logradouro || '';
+                        document.getElementById('input-add-bairro').value = data.bairro || '';
+                        document.getElementById('input-add-cidade').value = data.localidade || '';
+                        document.getElementById('input-add-estado').value = data.uf || '';
+                        
+                        document.getElementById('input-add-numero').focus();
+                        validarAddForm('endereco');
+                    }
+                } catch (error) {
+                    console.log("Erro na busca do CEP:", error);
+                }
+            }
+        }
+
+        function validarAddForm(tipo) {
+            let isValid = false;
+            if (tipo === 'email') {
+                isValid = document.getElementById('input-add-email').value.trim().length > 4;
+            } else if (tipo === 'telefone') {
+                let telLength = document.getElementById('input-add-telefone').value.replace(/\D/g, '').length;
+                isValid = telLength >= 10 && document.getElementById('check-gov-comms').checked;
+            } else if (tipo === 'endereco') {
+                const cep = document.getElementById('input-add-cep').value.trim();
+                const log = document.getElementById('input-add-logradouro').value.trim();
+                const num = document.getElementById('input-add-numero').value.trim();
+                const bai = document.getElementById('input-add-bairro').value.trim();
+                const cid = document.getElementById('input-add-cidade').value.trim();
+                
+                isValid = cep.length === 9 && log.length > 2 && num.length > 0 && bai.length > 2 && cid.length > 2;
+            }
+            document.getElementById(`btn-submit-${tipo}`).disabled = !isValid;
+        }
+
+        function confirmarAddForm(tipo) {
+            let val = '';
+            if (tipo === 'email') val = document.getElementById('input-add-email').value;
+            
+            if (tipo === 'telefone') {
+                let rawTel = document.getElementById('input-add-telefone').value.replace(/\D/g, '');
+                if (rawTel.length === 11) val = `(${rawTel.substring(0,2)}) ${rawTel.substring(2,7)}-${rawTel.substring(7,11)}`;
+                else if (rawTel.length === 10) val = `(${rawTel.substring(0,2)}) ${rawTel.substring(2,6)}-${rawTel.substring(6,10)}`;
+                else val = document.getElementById('input-add-telefone').value;
+            }
+            
+            if (tipo === 'endereco') {
+                const cep = document.getElementById('input-add-cep').value;
+                const log = document.getElementById('input-add-logradouro').value;
+                const num = document.getElementById('input-add-numero').value;
+                const comp = document.getElementById('input-add-complemento').value;
+                const bai = document.getElementById('input-add-bairro').value;
+                const cid = document.getElementById('input-add-cidade').value;
+                const uf = document.getElementById('input-add-estado').value;
+
+                let linha1 = `${log}, ${num}`;
+                if (comp) linha1 += ` - ${comp}`;
+                let linha2 = `${bai} - ${cid} - ${uf}`;
+
+                val = `${linha1}<br>${linha2}<br><span style='color:var(--text-muted); font-size:12px; display:block; margin-top:3px;'>CEP ${cep}</span>`;
+            }
+
+            adicionarDadoNoArray(tipo, val, false);
+        }
+
+        // --- ROTINAS GERAIS DE CAIXA E ESTADO ---
+
+        function adicionarDadoNoArray(tipo, valor, isGov) {
+            selecoes[tipo].push({
+                value: valor,
+                isGov: isGov
+            });
+            
+            renderSelectedBox(tipo);
+            
+            document.getElementById(`view-selection-${tipo}`).style.display = 'none';
+            document.getElementById(`view-add-${tipo}`).style.display = 'none';
+            document.getElementById(`view-selected-${tipo}`).style.display = 'block';
+            
+            const btnAddOther = document.getElementById(`btn-add-other-${tipo}`);
+            btnAddOther.style.display = selecoes[tipo].length >= 2 ? 'none' : 'flex';
+
+            checarConfirmacaoGlobal();
+        }
+
+        function editarItem(tipo, index) {
+            // Remove o item da lista (para liberar no histórico)
+            selecoes[tipo].splice(index, 1);
+            
+            const btnAddOther = document.getElementById(`btn-add-other-${tipo}`);
+            btnAddOther.style.display = 'flex'; 
+
+            renderSelectedBox(tipo);
+            checarConfirmacaoGlobal();
+            
+            // Conforme solicitado, ao clicar em editar, o usuário vai direto para a tela de Atualizar
+            abrirAddForm(tipo, true, index);
+        }
+
+        function renderSelectedBox(tipo) {
+            const container = document.getElementById(`val-${tipo}`);
+            container.innerHTML = ''; 
+
+            selecoes[tipo].forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'selected-item';
+
+                // Parte de Texto (Esquerda)
+                const textSpan = document.createElement('div');
+                textSpan.className = 'selected-text';
+                textSpan.innerHTML = item.value;
+
+                // Parte de Ações (Direita)
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'selected-actions';
+
+                // Aplica tag Principal/Secundário (ou Residencial/Outro para Endereço)
+                if (selecoes[tipo].length > 1 || index === 0) {
+                    const roleSpan = document.createElement('span');
+                    roleSpan.className = 'role-text';
+                    
+                    if (tipo === 'endereco') {
+                        roleSpan.innerText = index === 0 ? 'Residencial' : 'Outro';
+                    } else {
+                        roleSpan.innerText = index === 0 ? 'Principal' : 'Secundário';
+                    }
+                    actionsDiv.appendChild(roleSpan);
+                }
+
+                // Lógica de exibição da Tag Amarela ("Aguardando confirmação")
+                let showWarning = !item.isGov && tipo !== 'endereco';
+                
+                // Telefone secundário NUNCA exibe a tag de confirmação
+                if (tipo === 'telefone' && index > 0) {
+                    showWarning = false;
+                }
+
+                if (showWarning) {
+                    const warningSpan = document.createElement('span');
+                    warningSpan.className = 'badge-warning';
+                    warningSpan.innerHTML = '⚠️ Aguardando confirmação';
+                    actionsDiv.appendChild(warningSpan);
+                }
+
+                // Ícone de Lápis/Editar
+                const editIcon = document.createElement('div');
+                editIcon.className = 'icon-edit';
+                editIcon.title = 'Editar';
+                editIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+                editIcon.onclick = () => editarItem(tipo, index);
+                actionsDiv.appendChild(editIcon);
+
+                row.appendChild(textSpan);
+                row.appendChild(actionsDiv);
+                container.appendChild(row);
+            });
+        }
+
+        function checarConfirmacaoGlobal() {
+            const btn = document.getElementById('btn-confirmar-geral');
+            if (selecoes.email.length > 0 && selecoes.telefone.length > 0 && selecoes.endereco.length > 0) {
+                btn.disabled = false;
+                btn.classList.add('active');
+            } else {
+                btn.disabled = true;
+                btn.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
