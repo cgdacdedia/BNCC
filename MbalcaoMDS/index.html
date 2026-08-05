@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visão Integrada - Endereços Gov</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; height: 100vh; background-color: #ffffff; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        /* Alterado para ocupar 100% da tela */
+        .painel-unificado { display: flex; width: 100%; height: 100vh; }
+        /* Alterado para flex: 1 dividindo igualmente em 3 partes */
+        iframe { flex: 1; height: 100%; border: none; background-color: #ffffff; }
+        .iframe-esq, .iframe-centro { border-right: 1px solid #e0e0e0; }
+    </style>
+</head>
+<body>
+
+    <div class="painel-unificado">
+        <iframe class="iframe-esq" src="composicao_familiar.html" title="Tela de Composição Familiar"></iframe>
+        <iframe class="iframe-centro" id="frame-atualizacao" src="Atualizacao.html" title="Tela de Atualização de Dados"></iframe>
+        <!-- Terceiro frame apontando para o mapa -->
+        <iframe class="iframe-dir" id="frame-mapa-global" src="mapa_complemento.html" title="Mapa Integrado Global"></iframe>
+    </div>
+
+    <script>
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            if (!data || !data.acao) return;
+            
+            const frameDir = document.getElementById('frame-atualizacao');
+            const frameEsq = document.querySelector('.iframe-esq');
+            const frameMapaGlobal = document.getElementById('frame-mapa-global');
+
+            // Repassa para a tela de Atualização
+            if ((data.acao === 'mudarCPF' || data.acao === 'recarregarDados') && frameDir && frameDir.contentWindow) {
+                frameDir.contentWindow.postMessage(data, '*');
+            }
+            
+            // Repassa para a tela da Esquerda
+            if (data.acao === 'atualizarVisual' && frameEsq && frameEsq.contentWindow) {
+                frameEsq.contentWindow.postMessage(data, '*');
+            }
+
+            // NOVA REGRA: Repassa a lista completa para o mapa
+            if (data.acao === 'plotarEnderecosLista' && frameMapaGlobal && frameMapaGlobal.contentWindow) {
+                frameMapaGlobal.contentWindow.postMessage(data, '*');
+            }
+        });
+    </script>
+</body>
+</html>

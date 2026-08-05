@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Global - MVP Família</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; background-color: #f8f9fa; }
+        #mapa-global { width: 100vw; height: 100vh; z-index: 10; }
+        
+        .map-header {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #d1d5db;
+            text-align: center;
+            pointer-events: none;
+            transition: 0.3s ease;
+        }
+        .map-header h3 { margin: 0; font-size: 14px; color: #1351b4; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
+        .map-header span { font-size: 11px; color: #6b7280; font-weight: bold; }
+        
+        /* Cor de header caso o endereço seja confirmado */
+        .header-confirmado h3 { color: #c2410c !important; } 
+    </style>
+</head>
+<body>
+
+    <div class="map-header" id="header-mapa" style="display: none;">
+        <h3 id="header-title">Endereços Mapeados</h3>
+        <span id="nome-cidadao-label">Visualizando bases da família</span>
+    </div>
+
+    <div id="mapa-global"></div>
+
+    <script>
+        let map = null;
+        let layerGroup = null;
+
+        // Ícone customizado de Pino Laranja (Formato SVG inserido dinamicamente)
+        const orangePin = L.divIcon({
+            className: 'custom-pin',
+            html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36"><path fill="#f97316" stroke="#c2410c" stroke-width="2" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="3" fill="#fff"/></svg>`,
+            iconSize: [36, 36],
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36]
+        });
+
+        function initMapaVazio() {
+            map = L.map('mapa-global', { zoomControl: false }).setView([-14.235, -51.925], 4);
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; CartoDB'
+            }).addTo(map);
+
+            layerGroup = L.featureGroup().addTo(map);
+        }
+
+        window.onload = initMapaVazio;
+
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.acao === 'plotarEnderecosLista') {
+                const mapHeader = document.getElementById('header-mapa');
+                mapHeader.style.display = 'block';
+                
+                let title = "Endereços Mapeados";
+                let subtitle = "Visualizando base inteira da família";
+                mapHeader.classList.remove('header-confirmado');
+
+                // Lógica de titulação com base no status que a página da esquerda enviou
+                if (event.data.estado === 'pendente') {
+                    title = "Endereços do Familiar";
+                    subtitle = "Filtrado pelo membro do endereço selecionado";
+                } else if (event.data.estado === 'confirmado') {
+                    title = "Endereço Confirmado";
+                    subtitle = "Localização oficial atualizada";
+                    mapHeader.classList.add('header-confirmado');
+                }
+                
+                document.getElementById('header-title').innerText = title;
+                document.getElementById('nome-cidadao-label').innerText = subtitle;
+                
+                plotarEnderecos(event.data.enderecos, event.data.estado);
+            }
+        });
+
+        function plotarEnderecos(listaEnderecos, estado) {
+            layerGroup.clearLayers();
+            if (!listaEnderecos || listaEnderecos.length === 0) return;
+
+            let lastMarker = null;
+            let lastLat = null, lastLng = null;
+
+            listaEnderecos.forEach((end, index) => {
+                let lat = -25.4284; let lng = -49.2733; // Padrão Curitiba
+                
+                const lowerStr = end.logradouro.toLowerCase();
+                
+                // --- NOVA LÓGICA DE SIMULAÇÃO DE COORDENADAS ---
+                if (lowerStr.includes('são paulo') || lowerStr.includes('- sp')) { lat = -23.5505; lng = -46.6333; } 
+                else if (lowerStr.includes('brasília') || lowerStr.includes('- df')) { lat = -15.7938; lng = -47.8827; } 
+                else if (lowerStr.includes('olinda') || lowerStr.includes('- pe')) { lat = -8.0089; lng = -34.8553; } 
+                else if (lowerStr.includes('rio de janeiro') || lowerStr.includes('- rj')) { lat = -22.9068; lng = -43.1729; }
+                
+                // Distância determinística para pinos do mesmo CEP não baterem no mesmo px da tela
+                let strVal = end.logradouro + end.cep;
+                let offset = (strVal.length % 20) * 0.001;
+                lat += offset;
+                lng -= offset;
+
+                lastLat = lat; lastLng = lng;
+
+                let markerOptions = {};
+                // Regra cirúrgica: muda para o pino LARANJA se estiver confirmado
+                if (estado === 'confirmado') {
+                    markerOptions.icon = orangePin;
+                }
+
+                let marker = L.marker([lat, lng], markerOptions);
+                
+                let badge = estado === 'confirmado' 
+                    ? `<span style="color: #f97316; text-transform: uppercase; display: block; margin-bottom: 3px;">Endereço Oficial</span>`
+                    : `<span style="color: #1351b4; text-transform: uppercase; display: block; margin-bottom: 3px;">Local ${index + 1}</span>`;
+
+                let popupHtml = `
+                    <div style="font-size: 11px; font-weight: bold; color: #333; line-height: 1.3;">
+                        ${badge}
+                        ${end.logradouro}<br>
+                        <span style="color: #6b7280;">CEP: ${end.cep}</span><br>
+                        <span style="color: #6b7280; font-size: 9px;">Ref CPF: ${end.origemCpf}</span>
+                    </div>`;
+                
+                marker.bindPopup(popupHtml);
+                layerGroup.addLayer(marker);
+                lastMarker = marker;
+            });
+
+            // Se for confirmado, dá um zoom pesado e focado no único pino disponível
+            if (estado === 'confirmado' && lastMarker) {
+                map.flyTo([lastLat, lastLng], 17, { duration: 1.5 });
+                setTimeout(() => lastMarker.openPopup(), 1500);
+            } else {
+                // Se for lista, cria limites envolta de todos e ajusta o zoom globalmente 
+                const bounds = layerGroup.getBounds();
+                if (bounds.isValid()) {
+                    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 16, duration: 1.5 });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

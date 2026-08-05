@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Dados do Contato - Cidadão</title>
+    <style>
+        :root {
+            /* Cores Gov.br */
+            --gov-blue: #1351b4;
+            --gov-blue-disabled: #8faadc;
+            --gov-dark-blue: #0c326f;
+            --gov-yellow: #fff3cd;
+            --gov-yellow-text: #856404;
+            --gov-green: #eef7e9;
+            --gov-green-text: #1e8e3e;
+            
+            /* Estrutura */
+            --text-main: #212529;
+            --text-muted: #555555;
+            --border-color: #d1d5db;
+            --bg-color: #f8f9fa;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: var(--text-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* --- CABEÇALHO (HEADER) COMUM --- */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; border-bottom: 1px solid #eaeaea; background: #fff;
+        }
+        .gov-logo {
+            display: flex; flex-direction: column; align-items: flex-start;
+            font-weight: 900; font-size: 24px; color: var(--gov-blue);
+            line-height: 1; text-decoration: none;
+        }
+        .gov-logo-bar { display: flex; width: 32px; height: 3px; margin-bottom: 2px; }
+        .gov-logo-bar .green { background-color: #00923f; width: 70%; height: 100%; }
+        .gov-logo-bar .yellow { background-color: #f8c100; width: 30%; height: 100%; }
+        
+        .header-nav { display: flex; align-items: center; gap: 20px; }
+        .nav-links { display: flex; gap: 15px; }
+        .nav-links a { color: var(--gov-blue); text-decoration: none; font-size: 11px; font-weight: 600; }
+        .nav-links a:hover { text-decoration: underline; }
+        .header-icons { display: flex; align-items: center; gap: 12px; color: var(--gov-blue); border-left: 1px solid #ccc; padding-left: 20px; }
+        .header-icons svg { cursor: pointer; }
+        
+        .btn-entrar {
+            background-color: #f0f4f8; color: var(--gov-blue); border: none;
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; margin-left: 10px;
+        }
+        .btn-entrar:hover { background-color: #e2e8f0; }
+
+        .breadcrumb { padding: 15px 40px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+        .breadcrumb svg { color: var(--gov-blue); cursor: pointer; }
+
+        /* --- PÁGINAS (VIEWS) E DASHBOARD --- */
+        .page-container { max-width: 950px; margin: 40px auto; padding: 0 20px; animation: fadeIn 0.3s ease-in-out; }
+        .page-title { font-size: 34px; font-weight: 600; color: #000; margin-bottom: 40px; }
+        .page-title.center { text-align: center; }
+
+        .presentation-block { text-align: center; max-width: 850px; margin: 0 auto 30px; }
+        .presentation-subtitle { font-size: 18px; font-weight: 600; color: var(--text-main); margin-bottom: 15px; }
+        .presentation-text { font-size: 17px; color: var(--text-muted); line-height: 1.6; }
+        .btn-comecar { background-color: var(--gov-blue); color: #ffffff; border: none; padding: 12px 32px; border-radius: 25px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; margin: 0 auto 60px; display: block; }
+        .btn-comecar:hover { background-color: var(--gov-dark-blue); }
+
+        .data-section-title { font-size: 16px; font-weight: 400; color: var(--text-muted); margin-bottom: 25px; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 700; color: #000; margin-bottom: 8px; text-transform: uppercase; }
+        .form-control-dash { width: 100%; max-width: 380px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; font-style: italic; color: #333; background-color: #ffffff; pointer-events: none; }
+        
+        .status-text { font-size: 14px; font-style: italic; color: #111; line-height: 1.5; }
+        
+        /* Estilos dos Cards dinâmicos do Dashboard de Fundo */
+        .dash-card { border: 1px solid var(--border-color); border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; max-width: 380px; }
+        .dash-card-text { font-size: 14px; color: var(--text-main); }
+        .dash-card-actions { display: flex; align-items: center; gap: 12px; }
+        .dash-tag { font-size: 13px; color: #9aa0a6; font-style: italic; }
+        
+        .dash-card-address { border: 1px solid var(--border-color); border-radius: 4px; padding: 14px; margin-bottom: 12px; background-color: #ffffff; display: flex; flex-direction: column; max-width: 480px; }
+        .dash-card-address-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-main); font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+        .dash-card-address-body { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        
+        .icon-edit-dash { color: var(--gov-blue); width: 16px; height: 16px; }
+
+        /* --- OVERLAY & MODAL DA TRILHA --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-container { 
+            width: 100%; max-width: 580px; max-height: 95vh; overflow-y: auto;
+            background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transform: translateY(20px); transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-container { transform: translateY(0); }
+        .modal-container::-webkit-scrollbar { width: 6px; }
+        .modal-container::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+
+        /* Estilos internos do Modal (Trilha) */
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; font-size: 20px; color: var(--text-main); font-weight: bold; }
+        .close-btn { color: var(--gov-blue); font-size: 20px; font-weight: bold; cursor: pointer; }
+
+        .stepper { display: flex; justify-content: center; align-items: flex-start; margin-bottom: 30px; }
+        .step-wrapper { display: flex; flex-direction: column; align-items: center; width: 80px; position: relative; z-index: 2;}
+        .step-circle { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--gov-blue); display: flex; align-items: center; justify-content: center; font-size: 16px; background: white; color: var(--gov-blue); transition: 0.3s; }
+        .step-label { font-size: 13px; color: var(--text-main); margin-top: 8px; font-weight: 500;}
+        .step.active .step-circle { background-color: var(--gov-blue); color: white; border-color: var(--gov-blue); }
+        .step.completed .step-circle { border-color: var(--gov-blue); color: var(--gov-blue); }
+        .step.pending .step-circle { border-color: var(--border-color); color: var(--text-muted); }
+        .step.pending .step-label { color: var(--text-muted); }
+        .stepper-line { width: 80px; height: 1px; background-color: var(--gov-blue); margin-top: 20px; z-index: 1; }
+        .stepper-line.pending { background-color: var(--border-color); }
+
+        .helper-text { font-size: 14px; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4; }
+        .alert-box { background-color: var(--gov-yellow); border: 1px solid #ffeeba; color: var(--gov-yellow-text); padding: 15px; border-radius: 6px; font-size: 13px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; line-height: 1.4; }
+        
+        .radio-group { max-height: 220px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px; }
+        .radio-group::-webkit-scrollbar { width: 6px; }
+        .radio-group::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+        .radio-option { display: flex; align-items: flex-start; padding: 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .radio-option:hover { background-color: var(--bg-color); }
+        .radio-option input[type="radio"] { margin-top: 2px; margin-right: 12px; transform: scale(1.3); cursor: pointer; }
+        .radio-option.disabled { opacity: 0.5; cursor: not-allowed; background-color: #f1f1f1; }
+        .radio-option.disabled input[type="radio"] { cursor: not-allowed; }
+        .radio-label { font-size: 14px; color: var(--text-main); width: 100%; display: flex; flex-direction: column; gap: 4px;}
+        .radio-label-row { display: flex; align-items: center; justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
+        .badge-gov { background-color: var(--gov-blue); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 15px; font-family: inherit; }
+        .code-input-wrapper { display: flex; justify-content: center; margin-bottom: 10px; }
+        .code-input { width: 100%; letter-spacing: 5px; font-size: 18px; padding: 15px; text-align: left;}
+
+        .btn-link { background: none; border: none; color: var(--gov-blue); font-weight: bold; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 15px; padding: 10px 0; }
+        .btn-link span { font-size: 20px; margin-right: 6px; font-weight: normal; }
+        .btn-link:hover { text-decoration: underline; }
+
+        .btn-link-small { background: none; border: none; color: var(--gov-blue); font-weight: bold; font-size: 13px; cursor: pointer; padding: 0; text-align: left; }
+        .btn-link-small:hover { text-decoration: underline; }
+
+        .action-buttons { display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;}
+        .action-buttons.center { justify-content: center; }
+        .action-buttons.between { justify-content: space-between; }
+        
+        .btn-outline { flex: 1; max-width: 200px; background-color: #ffffff; border: 1px solid var(--gov-blue); color: var(--gov-blue); padding: 12px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-outline:hover { background-color: #f1f5f9; }
+        .btn-solid { flex: 1; max-width: 200px; background-color: var(--gov-blue); border: none; color: white; padding: 12px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-solid:disabled { background-color: var(--gov-blue-disabled); cursor: not-allowed; }
+        .btn-solid:not(:disabled):hover { background-color: var(--gov-dark-blue); }
+
+        .summary-box { border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 15px; overflow: hidden; }
+        .summary-header { background-color: #f1f5f9; padding: 10px 15px; font-size: 12px; font-weight: bold; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+        .summary-item { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+        .summary-item:last-child { border-bottom: none; }
+        .summary-text { font-size: 14px; color: var(--text-main); line-height: 1.4; }
+        .summary-tag { font-size: 11px; font-weight: bold; color: var(--gov-blue); background: #e0e7ff; padding: 3px 8px; border-radius: 4px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .view-content { animation: fadeIn 0.3s ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <!-- CABEÇALHO GLOBAL -->
+    <header class="header">
+        <a href="#" class="gov-logo">
+            <div class="gov-logo-bar">
+                <div class="green"></div>
+                <div class="yellow"></div>
+            </div>
+            gov.br
+        </a>
+        
+        <div class="header-nav">
+            <div class="nav-links">
+                <a href="#">Órgãos do Governo</a>
+                <a href="#">Acesso à Informação</a>
+                <a href="#">Legislação</a>
+                <a href="#">Acessibilidade</a>
+            </div>
+            <div class="header-icons">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20" stroke="currentColor"></path><path d="M12 2a10 10 0 0 0 0 20Z" fill="currentColor"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <button class="btn-entrar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    Entrar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="breadcrumb">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>&gt;</span>
+        <span id="breadcrumb-text">Gerenciar dados de contato</span>
+    </div>
+
+    <!-- PÁGINA 1: APRESENTAÇÃO -->
+    <main id="page-presentation" class="page-container">
+        <h1 class="page-title center">Gerenciar dados de contato</h1>
+
+        <div class="presentation-block">
+            <div class="presentation-subtitle">Reunimos seus dados em um único lugar para facilitar seu acesso a serviços públicos</div>
+            <div class="presentation-text">Agora, você informa seus dados de contato apenas uma vez e com o tempo eles serão reutilizados por órgãos públicos de forma segura, evitando novos cadastros. <strong>Revise e confirme suas informações.</strong> É rápido e ajuda a garantir que seus dados cadastrais estejam atualizados.</div>
+        </div>
+
+        <button class="btn-comecar" onclick="iniciarJornada()">Começar agora</button>
+
+        <h3 class="data-section-title" style="color:var(--text-main);">Dados cadastrais</h3>
+        <div class="data-grid">
+            <div class="left-col">
+                <div class="form-group"><label>CPF</label><input type="text" class="form-control-dash" value="102.102.102-31" readonly></div>
+                <div class="form-group"><label>NOME</label><input type="text" class="form-control-dash" value="Joana Maria de Souza" readonly></div>
+                <div class="form-group"><label>E-MAIL</label><p class="status-text">Aguardando Confirmação</p></div>
+                <div class="form-group"><label>TELEFONE</label><p class="status-text">Aguardando Confirmação</p></div>
+            </div>
+            <div class="right-col">
+                <div class="form-group"><label>ENDEREÇOS</label><p class="status-text">Aguardando Confirmação</p></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PÁGINA 2: DASHBOARD DE FUNDO -->
+    <main id="page-dashboard" class="page-container" style="display: none;">
+        <h1 class="page-title">Gerenciar dados de contato</h1>
+
+        <h3 class="data-section-title">Dados cadastrais</h3>
+        <div class="data-grid">
+            <div class="left-col">
+                <div class="form-group"><label>CPF</label><input type="text" class="form-control-dash" value="102.***.***-31" readonly></div>
+                <div class="form-group"><label>NOME</label><input type="text" class="form-control-dash" value="Joana Maria de Souza" readonly></div>
+                <div class="form-group"><label>E-MAIL</label><div id="dash-email" class="status-text">Nenhum dado cadastrado</div></div>
+                <div class="form-group"><label>TELEFONE</label><div id="dash-telefone" class="status-text">Nenhum dado cadastrado</div></div>
+            </div>
+            <div class="right-col">
+                <div class="form-group"><label>ENDEREÇOS</label><div id="dash-endereco" class="status-text">Nenhum dado cadastrado</div></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PÁGINA 3: MODAL DA TRILHA -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>Confirmação de Dados do Contato</h2>
+                <div class="close-btn" onclick="fecharModal()">&#x2716;</div>
+            </div>
+            <!-- CONTEÚDO RENDERIZADO VIA JS AQUI -->
+            <div id="app-container"></div>
+        </div>
+    </div>
+
+    <!-- SCRIPT GERAL -->
+    <script>
+        // --- TRANSIÇÃO ENTRE PÁGINAS E ATUALIZAÇÃO DO DASHBOARD ---
+        function iniciarJornada() {
+            // Esconde apresentação, mostra o dashboard
+            document.getElementById('page-presentation').style.display = 'none';
+            document.getElementById('page-dashboard').style.display = 'block';
+            document.getElementById('breadcrumb-text').innerText = 'Base Nacional de Contatos';
+            
+            // Abre o Modal com atraso suave
+            setTimeout(() => {
+                document.getElementById('modal-overlay').classList.add('active');
+                renderModal(); // Inicia a trilha do cidadão
+            }, 100);
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+        }
+
+        // Função responsável por desenhar as caixas atrás do modal em Tempo Real
+        function atualizarDashboardLive() {
+            ['email', 'telefone', 'endereco'].forEach(mod => {
+                const dashEl = document.getElementById(`dash-${mod}`);
+                const items = state.confirmedData[mod];
+                
+                if (items.length === 0) {
+                    dashEl.innerHTML = '<p class="status-text">Nenhum dado cadastrado</p>';
+                } else {
+                    let html = '';
+                    items.forEach((item, idx) => {
+                        if (mod === 'endereco') {
+                            const tag = idx === 0 ? 'RESIDENCIAL' : 'OUTRO';
+                            html += `
+                            <div class="dash-card-address">
+                                <div class="dash-card-address-header">
+                                    <span>${tag}</span>
+                                    <svg class="icon-edit-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </div>
+                                <div class="dash-card-address-body">${item.logradouro}<br>CEP: ${item.cep}</div>
+                            </div>`;
+                        } else {
+                            const tag = idx === 0 ? 'Principal' : 'Secundário';
+                            html += `
+                            <div class="dash-card">
+                                <span class="dash-card-text">${item.value}</span>
+                                <div class="dash-card-actions">
+                                    <span class="dash-tag">${tag}</span>
+                                    <svg class="icon-edit-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </div>
+                            </div>`;
+                        }
+                    });
+                    dashEl.innerHTML = html;
+                }
+            });
+        }
+
+
+        // --- LÓGICA DO MODAL DA TRILHA ---
+        const db = {
+            email: [
+                { value: "mariapoana23@gmail.com", isGov: true },
+                { value: "mariapoana42@gmail.com", isGov: false },
+                { value: "contato.secundario@empresa.com.br", isGov: false }
+            ],
+            telefone: [
+                { value: "(21) 99999-8888", isGov: true },
+                { value: "(22) 88888-9999", isGov: false },
+                { value: "(11) 97777-6666", isGov: false },
+                { value: "(31) 33333-2222", isGov: false }
+            ],
+            endereco: [
+                { value: "Rua do Alto, 324 - Centro - Curitiba - PR", logradouro: "Rua do Alto, 324 - Centro - Curitiba - PR", cep: "12345-321", isGov: true },
+                { value: "Rua das Flores, 324 - Centro - Curitiba - PR", logradouro: "Rua das Flores, 324 - Centro - Curitiba - PR", cep: "12345-321", isGov: false },
+                { value: "Av. Marcos Rodrigues, 500 - Batel - Curitiba - PR", logradouro: "Av. Marcos Rodrigues, 500 - Batel - Curitiba - PR", cep: "80230-000", isGov: false },
+                { value: "Rua XV de Novembro, 200 - Centro - Curitiba - PR", logradouro: "Rua XV de Novembro, 200 - Centro - Curitiba - PR", cep: "80020-310", isGov: false },
+                { value: "Al. Doutor Muricy, 50 - Água Verde - Curitiba - PR", logradouro: "Al. Doutor Muricy, 50 - Água Verde - Curitiba - PR", cep: "80240-020", isGov: false }
+            ]
+        };
+
+        const steps = ['email', 'telefone', 'endereco', 'summary'];
+        let state = {
+            currentStepIndex: 0, isSecondaryPhase: false, currentView: 'list',
+            pendingItem: null, confirmedData: { email: [], telefone: [], endereco: [] }
+        };
+
+        const appContainer = document.getElementById('app-container');
+
+        function renderModal() {
+            let html = '';
+            if (state.currentStepIndex < 3) html += renderStepper();
+
+            if (state.currentStepIndex === 3) html += renderSummary();
+            else {
+                switch(state.currentView) {
+                    case 'list': html += renderList(); break;
+                    case 'verify': html += renderVerify(); break;
+                    case 'prompt': html += renderPrompt(); break;
+                    case 'add': html += renderAddForm(); break;
+                }
+            }
+            appContainer.innerHTML = `<div class="view-content">${html}</div>`;
+        }
+
+        function renderStepper() {
+            const getStatus = (idx) => {
+                if (state.currentStepIndex > idx) return 'completed';
+                if (state.currentStepIndex === idx) return 'active';
+                return 'pending';
+            };
+            return `
+                <div class="stepper">
+                    <div class="step-wrapper step ${getStatus(0)}"><div class="step-circle">1</div><span class="step-label">E-mail</span></div>
+                    <div class="stepper-line ${state.currentStepIndex > 0 ? 'active' : 'pending'}"></div>
+                    <div class="step-wrapper step ${getStatus(1)}"><div class="step-circle">2</div><span class="step-label">Telefone</span></div>
+                    <div class="stepper-line ${state.currentStepIndex > 1 ? 'active' : 'pending'}"></div>
+                    <div class="step-wrapper step ${getStatus(2)}"><div class="step-circle">3</div><span class="step-label">Endereço</span></div>
+                </div>
+            `;
+        }
+
+        function renderList() {
+            const module = steps[state.currentStepIndex];
+            const typeLabel = module === 'endereco' ? (state.isSecondaryPhase ? 'outro endereço' : 'endereço residencial') : (state.isSecondaryPhase ? `${module} secundário` : `${module} principal`);
+            const confirmedValues = state.confirmedData[module].map(i => i.value);
+
+            let optionsHtml = db[module].map((item) => {
+                const isSelected = confirmedValues.includes(item.value);
+                return `
+                <label class="radio-option ${isSelected ? 'disabled' : ''}" ${!isSelected ? `onclick="habilitarBotao('btn-cont-list')"` : ''}>
+                    <input type="radio" name="sel_${module}" value='${JSON.stringify(item)}' ${isSelected ? 'disabled' : ''}>
+                    <div class="radio-label">
+                        <div class="radio-label-row">
+                            <span>${module === 'endereco' ? item.logradouro + '<br><span style="color:gray;font-size:12px;">CEP: '+item.cep+'</span>' : item.value}</span>
+                            ${item.isGov ? '<span class="badge-gov">Atual no gov.br</span>' : ''}
+                        </div>
+                    </div>
+                </label>
+            `}).join('');
+
+            const warningBox = module !== 'endereco' ? `<div class="alert-box"><div style="font-size:18px;">⚠️</div><div>Caso escolha um ${module} <strong>diferente do atual no gov.br</strong>, será enviado um código de verificação na etapa seguinte.</div></div>` : '';
+
+            return `
+                <p class="helper-text">Encontramos <strong>${db[module].length} ${module}s</strong> em nossa base de dados. Selecione seu <strong>${typeLabel}</strong> ou adicione um novo.</p>
+                <div class="radio-group">${optionsHtml}</div>
+                <button class="btn-link" onclick="changeView('add')"><span>+</span> Adicionar um novo ${module}</button>
+                ${warningBox}
+                <div class="action-buttons"><button class="btn-solid" id="btn-cont-list" onclick="processListSelection()" disabled><span>&#x2714;</span> Continuar</button></div>
+            `;
+        }
+
+        function renderAddForm() {
+            const module = steps[state.currentStepIndex];
+            let formHtml = '';
+
+            if (module === 'email') {
+                formHtml = `<div class="form-group"><label>Endereço de e-mail</label><input type="email" id="input-add" class="form-control" placeholder="Digite seu e-mail" oninput="validarInputGenerico(this, 5, 'btn-cont-add')"></div>`;
+            } else if (module === 'telefone') {
+                formHtml = `<div class="form-group"><label>Número do telefone</label><input type="tel" id="input-add" class="form-control" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this); validarInputGenerico(this, 14, 'btn-cont-add')"></div>
+                            <div class="alert-box" style="background:#fff; border:1px solid var(--border-color); color:var(--text-main);">⚠️ &nbsp; Ao continuar, você autoriza receber comunicações do Governo neste número.</div>`;
+            } else if (module === 'endereco') {
+                formHtml = `<div class="form-group"><label>CEP</label><input type="text" id="input-add-cep" class="form-control" placeholder="00000-000" oninput="formatarCEP(this); buscarCEP(this.value)"></div>
+                            <div id="address-extra-fields" style="display: none; margin-top: 15px;">
+                                <div class="form-group"><label>Logradouro</label><input type="text" id="input-add-logradouro" class="form-control" oninput="validarFormEndereco()"></div>
+                                <div style="display: flex; gap: 10px;"><div class="form-group" style="flex: 1;"><label>Número</label><input type="text" id="input-add-numero" class="form-control" oninput="validarFormEndereco()"></div><div class="form-group" style="flex: 1;"><label>Complemento</label><input type="text" id="input-add-complemento" class="form-control"></div></div>
+                                <div class="form-group"><label>Bairro</label><input type="text" id="input-add-bairro" class="form-control" oninput="validarFormEndereco()"></div>
+                                <div style="display: flex; gap: 10px;"><div class="form-group" style="flex: 2;"><label>Cidade</label><input type="text" id="input-add-cidade" class="form-control" oninput="validarFormEndereco()"></div><div class="form-group" style="flex: 1;"><label>Estado</label><input type="text" id="input-add-estado" class="form-control" oninput="validarFormEndereco()"></div></div>
+                            </div>`;
+            }
+
+            return `
+                <h3 style="font-size: 16px; margin-bottom: 20px;">Adicionar ${module} ${state.isSecondaryPhase ? (module==='endereco'?'Outro':'secundário') : (module==='endereco'?'Residencial':'principal')}</h3>
+                ${formHtml}
+                <div class="action-buttons between"><button class="btn-outline" onclick="changeView('list')">&#x2716; Cancelar</button><button class="btn-solid" id="btn-cont-add" onclick="processAddForm()" disabled><span>&#x2714;</span> Continuar</button></div>
+            `;
+        }
+
+        function renderVerify() {
+            const module = steps[state.currentStepIndex];
+            return `
+                <p class="helper-text" style="font-size: 15px; color: var(--text-main);">Digite abaixo o código que foi enviado para o ${module}:<br><strong style="font-size: 16px;">${state.pendingItem.value}</strong></p>
+                <div class="code-input-wrapper"><input type="text" id="input-code" class="form-control code-input" placeholder="0000" maxlength="4" oninput="validarInputGenerico(this, 4, 'btn-cont-verify')"></div>
+                <button class="btn-link-small">Não recebeu o código? Enviar novamente</button>
+                <div class="alert-box" style="margin-top:20px;"><div style="font-size:18px;">⚠️</div><div><strong>Atenção:</strong> Para testes, digite o código <strong>2345</strong>.</div></div>
+                <div class="action-buttons between"><button class="btn-outline" onclick="changeView('list')">&#x2190; Voltar</button><button class="btn-solid" id="btn-cont-verify" onclick="processVerify()" disabled><span>&#x2714;</span> Continuar</button></div>
+            `;
+        }
+
+        function renderPrompt() {
+            const module = steps[state.currentStepIndex];
+            const labelSec = module === 'endereco' ? 'outro endereço' : `${module} secundário`;
+            const lastItem = state.confirmedData[module][state.confirmedData[module].length - 1];
+            
+            return `
+                <div style="background-color: var(--gov-green); padding: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: flex-start; gap: 15px; margin-bottom: 30px;">
+                    <div style="background-color: var(--gov-green-text); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    <div style="font-size: 15px; color: var(--text-main); line-height: 1.4;">Seu ${module} <strong>${module === 'endereco' ? 'endereço' : lastItem.value}</strong> foi ${module === 'endereco' ? 'adicionado' : 'validado'}!</div>
+                </div>
+                <p style="text-align: center; font-size: 15px; color: var(--text-main); margin-bottom: 30px;">Deseja adicionar um <strong>${labelSec}</strong>?</p>
+                <div class="action-buttons center" style="border: none; padding-top: 0; margin-top: 0;"><button class="btn-outline" onclick="handleSecondary(true)">Adicionar</button><button class="btn-solid" onclick="handleSecondary(false)">Não adicionar</button></div>
+            `;
+        }
+
+        function renderSummary() {
+            let html = `<div style="background-color: var(--gov-green); border: 1px solid #c3e6cb; color: var(--gov-green-text); padding: 15px; border-radius: 6px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-weight: 500;"><div style="background: white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; color: var(--gov-green-text);">✓</div>Dados Confirmados com Sucesso</div>`;
+            ['email', 'telefone', 'endereco'].forEach(mod => {
+                let items = state.confirmedData[mod];
+                if(items.length > 0) {
+                    let itemsHtml = items.map((i, idx) => {
+                        let tag = mod === 'endereco' ? (idx===0?'RESIDENCIAL':'OUTRO') : (idx===0?'PRINCIPAL':'SECUNDÁRIO');
+                        let displayVal = mod === 'endereco' ? i.logradouro + ' - CEP: ' + i.cep : i.value;
+                        return `<div style="padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><div style="font-size: 14px; color: var(--text-main); line-height: 1.4;">${displayVal}</div><div style="font-size: 11px; font-weight: bold; color: var(--gov-blue); background: #e0e7ff; padding: 3px 8px; border-radius: 4px;">${tag}</div></div>`;
+                    }).join('');
+                    html += `<div style="border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 15px; overflow: hidden;"><div style="background-color: #f1f5f9; padding: 10px 15px; font-size: 12px; font-weight: bold; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">${mod.toUpperCase()}S</div>${itemsHtml}</div>`;
+                }
+            });
+            html += `<div class="action-buttons center" style="border:none; margin-top:30px;"><button class="btn-solid" onclick="fecharModal()">Concluir Atualização</button></div>`;
+            return html;
+        }
+
+        // --- LÓGICAS INTERNAS DO MODAL ---
+        function changeView(viewName) { state.currentView = viewName; renderModal(); }
+        function habilitarBotao(btnId) { document.getElementById(btnId).disabled = false; }
+
+        function processListSelection() {
+            const module = steps[state.currentStepIndex];
+            const radio = document.querySelector(`input[name="sel_${module}"]:checked`);
+            if (radio) {
+                const item = JSON.parse(radio.value);
+                state.pendingItem = item;
+                if (module === 'endereco' || item.isGov || (module === 'telefone' && state.isSecondaryPhase)) {
+                    confirmPendingItem();
+                } else {
+                    changeView('verify');
+                }
+            }
+        }
+
+        function processAddForm() {
+            const module = steps[state.currentStepIndex];
+            let val = '';
+            if (module === 'email') val = document.getElementById('input-add').value;
+            if (module === 'telefone') {
+                let rawTel = document.getElementById('input-add').value.replace(/\D/g, '');
+                if (rawTel.length === 11) val = `(${rawTel.substring(0,2)}) ${rawTel.substring(2,7)}-${rawTel.substring(7,11)}`;
+                else if (rawTel.length === 10) val = `(${rawTel.substring(0,2)}) ${rawTel.substring(2,6)}-${rawTel.substring(6,10)}`;
+                else val = document.getElementById('input-add').value;
+            }
+            if (module === 'endereco') {
+                const cep = document.getElementById('input-add-cep').value;
+                const log = document.getElementById('input-add-logradouro').value;
+                const num = document.getElementById('input-add-numero').value;
+                val = `${log}, ${num}`;
+                state.pendingItem = { logradouro: val, cep: cep, isGov: false, value: val };
+                confirmPendingItem(); return;
+            }
+
+            state.pendingItem = { value: val, isGov: false };
+            if (module === 'telefone' && state.isSecondaryPhase) confirmPendingItem();
+            else changeView('verify');
+        }
+
+        function processVerify() {
+            if (document.getElementById('input-code').value === "2345") confirmPendingItem();
+            else alert("Código inválido. Digite 2345.");
+        }
+
+        function confirmPendingItem() {
+            const module = steps[state.currentStepIndex];
+            state.confirmedData[module].push(state.pendingItem);
+            state.pendingItem = null;
+            
+            atualizarDashboardLive(); // Atualiza a tela de fundo IMEDIATAMENTE
+
+            if (state.isSecondaryPhase) {
+                state.isSecondaryPhase = false; state.currentStepIndex++; state.currentView = 'list'; renderModal();
+            } else { changeView('prompt'); }
+        }
+
+        function handleSecondary(wantsSecondary) {
+            if (wantsSecondary) { state.isSecondaryPhase = true; changeView('list'); } 
+            else { state.isSecondaryPhase = false; state.currentStepIndex++; state.currentView = 'list'; renderModal(); }
+        }
+
+        function validarInputGenerico(input, minLength, targetBtnId = 'btn-cont-add') { const btn = document.getElementById(targetBtnId); if(btn) btn.disabled = input.value.trim().length < minLength; }
+        function formatarCEP(input) { let value = input.value.replace(/\D/g, ''); if (value.length > 5) value = value.replace(/^(\d{5})(\d)/, '$1-$2'); input.value = value.substring(0, 9); }
+        function mascaraTelefone(input) { let v = input.value.replace(/\D/g, ''); if (v.length > 11) v = v.substring(0, 11); if (v.length > 2) v = v.replace(/^(\d{2})(\d)/g, '($1) $2'); if (v.length > 9) v = v.replace(/(\d{5})(\d{4})$/, '$1-$2'); else if (v.length > 8) v = v.replace(/(\d{4})(\d{0,4})$/, '$1-$2'); input.value = v; }
+        
+        async function buscarCEP(cep) {
+            let cepLimpo = cep.replace(/\D/g, '');
+            if (cepLimpo.length === 8) {
+                try {
+                    let response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+                    let data = await response.json();
+                    if (!data.erro) {
+                        document.getElementById('input-add-logradouro').value = data.logradouro || '';
+                        document.getElementById('input-add-bairro').value = data.bairro || '';
+                        document.getElementById('input-add-cidade').value = data.localidade || '';
+                        document.getElementById('input-add-estado').value = data.uf || '';
+                        document.getElementById('address-extra-fields').style.display = 'block';
+                        document.getElementById('input-add-numero').focus();
+                        validarFormEndereco();
+                    }
+                } catch (error) { console.log("Erro ViaCEP:", error); }
+            }
+        }
+        function validarFormEndereco() {
+            const cep = document.getElementById('input-add-cep').value.trim(); const log = document.getElementById('input-add-logradouro').value.trim(); const num = document.getElementById('input-add-numero').value.trim();
+            const btn = document.getElementById('btn-cont-add'); if(btn) btn.disabled = !(cep.length === 9 && log.length > 2 && num.length > 0);
+        }
+
+    </script>
+</body>
+</html>
