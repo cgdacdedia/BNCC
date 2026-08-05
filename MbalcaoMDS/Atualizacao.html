@@ -51,7 +51,7 @@
         .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; box-sizing: border-box; }
         .btn-continue { background-color: var(--gov-blue); color: white; border: none; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: block; width: 100%; text-align: center; }
         .btn-continue:hover{ background-color: var(--gov-dark-blue); }
-        .sticky-footer { position: absolute; bottom: 0; width: 100%; background: white; padding: 15px 20px; box-sizing: border-box; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .sticky-footer { position: absolute; bottom: 0; width: 100%; background: white; padding: 15px 20px; box-sizing: border-box; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; z-index: 10; }
         .btn-confirmar-geral { background-color: var(--gov-blue); color: white; border: none; padding: 12px 28px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
         .btn-confirmar-geral span { margin-right: 8px; font-size: 18px; }
         .btn-confirmar-geral:hover { background-color: var(--gov-dark-blue); transform: scale(1.02); }
@@ -121,9 +121,6 @@
         </div>
 
         <div class="sticky-footer">
-            <button class="btn-action" onclick="showAddForm()" style="margin-top: 0;">
-                <span style="font-size: 20px;">+</span> Adicionar um novo endereço
-            </button>
             <button class="btn-confirmar-geral" onclick="confirmarTudo()"><span>&#x2714;</span> Confirmar</button>
         </div>
 
