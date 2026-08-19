@@ -100,7 +100,7 @@
         .icon-btn.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
         .icon-svg { width: 16px; height: 16px; }
 
-        .btn-add-inline { background: none; border: none; color: var(--gov-blue); font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; margin-bottom: 15px; }
+        .btn-add-inline { background: none; border: none; color: var(--gov-blue); font-size: 14px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; margin-bottom: 15px; }
         .btn-add-inline:hover { text-decoration: underline; }
 
         /* --- MODAL --- */
@@ -296,7 +296,7 @@
             telefone: [
                 { value: "(21) 99999-8888", isGov: true },
                 { value: "(11) 98765-4321", isGov: false },
-                { value: "(21) 2233-4455", isGov: false } // Fixo
+                { value: "(21) 2233-4455", isGov: false }
             ],
             endereco: [
                 { logradouro: "Rua das Flores, 324 - Centro", complemento: "AP 302", cidadeUf: "Curitiba - PR", cep: "12345-321", isGov: true, value: "Rua das Flores, 324 - Centro, AP 302, Curitiba - PR" },
@@ -312,20 +312,16 @@
             isSecondaryPhase: false,
             currentView: 'list',
             pendingItem: null,
+            pendingConfirmedItem: null,
             targetModule: null,
             targetIndex: null,
             confirmedData: {
                 email: [
-                    { value: "mjdesouza@gmail.com", isGov: true },
-                    { value: "mariajoana23@gmail.com", isGov: false }
+                    { value: "mjdesouza@gmail.com", isGov: true }
                 ],
-                telefone: [
-                    { value: "(21) 99999-8888", isGov: true },
-                    { value: "(11) 98765-4321", isGov: false }
-                ],
+                telefone: [],
                 endereco: [
-                    { logradouro: "Rua das Flores, 324 - Centro", complemento: "AP 302", cidadeUf: "Curitiba - PR", cep: "12345-321", value: "Rua das Flores, 324 - Centro - AP 302 - Curitiba - PR", isGov: true },
-                    { logradouro: "Av. Marcos Rodrigues, 324 - Centro", complemento: "AP 302", cidadeUf: "Curitiba - PR", cep: "12345-321", value: "Av. Marcos Rodrigues, 324 - Centro - AP 302 - Curitiba - PR", isGov: false }
+                    { logradouro: "Av. Marcos Rodrigues, 324 - Centro", complemento: "AP 302", cidadeUf: "Curitiba - PR", cep: "12345-321", value: "Av. Marcos Rodrigues, 324 - Centro - AP 302 - Curitiba - PR", isGov: true }
                 ]
             }
         };
@@ -361,7 +357,6 @@
                 let html = '';
                 state.confirmedData.email.forEach((item, idx) => {
                     const tag = idx === 0 ? 'Principal' : 'Secundário';
-                    // Regra: Não pode excluir e-mail principal se não houver telefone cadastrado
                     const cannotDelete = (idx === 0 && totalEmails === 1 && totalTels === 0);
                     html += `
                     <div class="dash-card">
@@ -387,7 +382,6 @@
                 let html = '';
                 state.confirmedData.telefone.forEach((item, idx) => {
                     const tag = idx === 0 ? 'Principal' : 'Secundário';
-                    // Regra: Não pode excluir telefone principal se não houver e-mail cadastrado
                     const cannotDelete = (idx === 0 && totalTels === 1 && totalEmails === 0);
                     html += `
                     <div class="dash-card">
@@ -409,12 +403,11 @@
             const endContainer = document.getElementById('dash-endereco-container');
             const totalEnd = state.confirmedData.endereco.length;
             if (totalEnd === 0) {
-                endContainer.innerHTML = `<div class="status-text">Nenhum endereço cadastrado</div><button class="btn-add-inline" onclick="abrirAdicionarDireto('endereco')">+ Adicionar endereço</button>`;
+                endContainer.innerHTML = `<div class="status-text">Nenhum endereço cadastrado</div><button class="btn-add-inline" onclick="abrirAdicionarDireto('endereco')">+ Adicionar endereço residencial</button>`;
             } else {
                 let html = '';
                 state.confirmedData.endereco.forEach((item, idx) => {
                     const tag = idx === 0 ? 'RESIDENCIAL' : 'OUTRO';
-                    // Endereço Residencial tem apenas alteração; secundário tem exclusão
                     const trashBtn = idx > 0 ? `<button class="icon-btn" onclick="abrirExcluirDireto('endereco', ${idx})" title="Excluir">${SVG_TRASH}</button>` : '';
                     html += `
                     <div class="dash-card-address">
@@ -464,17 +457,18 @@
         function abrirAdicionarDireto(module) {
             state.mode = 'add_direct';
             state.targetModule = module;
+            state.targetIndex = null;
             state.isSecondaryPhase = (state.confirmedData[module].length > 0);
             state.currentView = 'add';
-            document.getElementById('modal-title').innerText = `Adicionar ${module.charAt(0).toUpperCase() + module.slice(1)}`;
-            renderModal();
+            document.getElementById('modal-title').innerText = 'Alteração de Dados do Contato';
+            renderAlteracaoModal();
             abrirModal();
         }
 
         // --- RENDERIZADORES DE TELAS DO MODAL ---
         function renderModal() {
             if (state.mode === 'delete') { renderExclusaoModal(); return; }
-            if (state.mode === 'edit') { renderAlteracaoModal(); return; }
+            if (state.mode === 'edit' || state.mode === 'add_direct') { renderAlteracaoModal(); return; }
 
             document.getElementById('modal-title').innerText = 'Confirmação de Dados do Contato';
             let html = '';
@@ -510,7 +504,7 @@
         }
 
         function renderList() {
-            const module = state.mode === 'add_direct' ? state.targetModule : steps[state.currentStepIndex];
+            const module = steps[state.currentStepIndex];
             const typeLabel = module === 'endereco' ? (state.isSecondaryPhase ? 'outro endereço' : 'endereço residencial') : (state.isSecondaryPhase ? `${module} secundário` : `${module} principal`);
             const confirmedValues = state.confirmedData[module].map(i => i.value);
 
@@ -543,11 +537,13 @@
         function renderAddForm() {
             const module = (state.mode === 'edit' || state.mode === 'add_direct') ? state.targetModule : steps[state.currentStepIndex];
             const isPrincipal = !state.isSecondaryPhase;
+            const actionWord = (state.mode === 'edit') ? 'Alterar' : 'Adicionar';
+            const tagWord = (module === 'endereco') ? (isPrincipal ? 'residencial' : 'outro') : (isPrincipal ? 'principal' : 'secundário');
             let formHtml = '';
 
             if (module === 'email') {
                 formHtml = `
-                    <p class="helper-text">Alterar <strong>E-mail ${isPrincipal ? 'principal' : 'secundário'}</strong>:</p>
+                    <p class="helper-text">${actionWord} <strong>E-mail ${tagWord}</strong>:</p>
                     <div class="form-group">
                         <label>Endereço de e-mail</label>
                         <input type="email" id="input-add" class="form-control" placeholder="Digite seu e-mail" oninput="validarInputEmail(this)">
@@ -556,17 +552,17 @@
                 `;
             } else if (module === 'telefone') {
                 formHtml = `
-                    <p class="helper-text">Alterar <strong>Telefone ${isPrincipal ? 'principal' : 'secundário'}</strong>:</p>
+                    <p class="helper-text">${actionWord} <strong>Telefone ${tagWord}</strong>:</p>
                     <div class="form-group">
                         <label>Número do telefone</label>
                         <input type="tel" id="input-add" class="form-control" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this); validarInputTelefone(this, ${isPrincipal})">
                         <div id="tel-error-msg" class="error-message">O telefone principal deve ser celular (iniciado por 6, 7, 8 ou 9).</div>
                     </div>
-                    ${isPrincipal ? '<div class="alert-box"><div style="font-size:18px;">⚠️</div><div>Será enviado um código de verificação para o telefone informado.</div></div>' : ''}
+                    ${isPrincipal ? '<div class="alert-box"><div style="font-size:18px;">⚠️</div><div>Será enviado um código de verificação para o telefone informado.</div></div>' : '<div class="alert-box alert-box-info"><div style="font-size:18px;">ℹ️</div><div>Telefone secundário não necessita de código de validação.</div></div>'}
                 `;
             } else if (module === 'endereco') {
                 formHtml = `
-                    <p class="helper-text">Informe os novos dados do seu endereço:</p>
+                    <p class="helper-text">${actionWord} <strong>Endereço ${tagWord}</strong>:</p>
                     <div class="form-group">
                         <label>CEP</label>
                         <input type="text" id="input-add-cep" class="form-control" placeholder="00000-000" oninput="formatarCEP(this); buscarCEP(this.value)">
@@ -598,9 +594,12 @@
         function renderVerify() {
             const module = (state.mode === 'edit' || state.mode === 'add_direct') ? state.targetModule : steps[state.currentStepIndex];
             const isPrincipal = !state.isSecondaryPhase;
+            const actionWord = (state.mode === 'edit') ? 'Alterar' : 'Adicionar';
+            const tagWord = isPrincipal ? 'principal' : 'secundário';
+            const moduleLabel = module === 'email' ? 'E-mail' : 'Telefone';
             return `
                 <p class="helper-text" style="font-size: 15px; color: var(--text-main);">
-                    Alterar <strong>${module === 'email' ? 'E-mail' : 'Telefone'} ${isPrincipal ? 'principal' : 'secundário'}</strong>.<br><br>
+                    ${actionWord} <strong>${moduleLabel} ${tagWord}</strong>.<br><br>
                     Digite abaixo o código que foi enviado para o ${module}:<br>
                     <strong style="font-size: 16px;">${state.pendingItem.value}</strong>
                 </p>
@@ -608,7 +607,7 @@
                 <button class="btn-link-small">Não recebeu o código? Enviar novamente</button>
                 <div class="alert-box"><div style="font-size:18px;">⚠️</div><div>Para testes, digite o código de verificação <strong>2345</strong>.</div></div>
                 <div class="action-buttons between">
-                    <button class="btn-outline" onclick="fecharModal()">&#x2190; Voltar</button>
+                    <button class="btn-outline" onclick="fecharModal()">&#x2190; Cancelar</button>
                     <button class="btn-solid" id="btn-cont-verify" onclick="processVerify()" disabled><span>&#x2714;</span> Continuar</button>
                 </div>
             `;
@@ -671,7 +670,7 @@
             fecharModal();
         }
 
-        // --- FLUXO DE ALTERAÇÃO (MODAL) ---
+        // --- FLUXO DE ALTERAÇÃO E ADIÇÃO DIRETA (MODAL) ---
         function renderAlteracaoModal() {
             if (state.currentView === 'confirm_edit_prompt') {
                 const item = state.confirmedData[state.targetModule][state.targetIndex];
@@ -682,7 +681,7 @@
                     <div class="view-content">
                         <div class="alert-box"><div style="font-size:18px;">⚠️</div><div>Você deseja realmente alterar a informação?</div></div>
                         <div class="form-group">
-                            <label>${state.targetModule.toUpperCase()}</label>
+                            <label>${state.targetModule === 'endereco' ? 'ENDEREÇO' : state.targetModule.toUpperCase()}</label>
                             <div class="dash-card" style="background:#f8f9fa;">
                                 <span class="dash-card-text">${displayVal}</span>
                                 <span class="dash-tag">${tag}</span>
@@ -698,13 +697,22 @@
                 appContainer.innerHTML = `<div class="view-content">${renderAddForm()}</div>`;
             } else if (state.currentView === 'verify') {
                 appContainer.innerHTML = `<div class="view-content">${renderVerify()}</div>`;
-            } else if (state.currentView === 'success_edit') {
-                const val = state.targetModule === 'endereco' ? 'endereço' : state.confirmedData[state.targetModule][state.targetIndex].value;
+            } else if (state.currentView === 'success_action') {
+                const moduleLabel = state.targetModule === 'endereco' ? 'endereço' : (state.targetModule === 'email' ? 'e-mail' : 'telefone');
+                const valObj = state.pendingConfirmedItem;
+                const displayVal = valObj ? (state.targetModule === 'endereco' ? 'endereço' : valObj.value) : '';
+                const actionVerb = state.mode === 'edit' ? 'alterado' : 'adicionado';
+                const statusVerb = state.targetModule === 'endereco' ? actionVerb : 'validado';
+
                 appContainer.innerHTML = `
                     <div class="view-content">
                         <div style="background-color: var(--gov-green); padding: 20px; border-radius: 4px; display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
-                            <div style="background-color: var(--gov-green-text); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                            <div style="font-size: 15px; color: var(--text-main); line-height: 1.4;">Seu ${state.targetModule} <strong>${val}</strong> foi alterado e validado!</div>
+                            <div style="background-color: var(--gov-green-text); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                            <div style="font-size: 15px; color: var(--text-main); line-height: 1.4;">
+                                Seu ${moduleLabel} <strong>${displayVal}</strong> foi ${statusVerb}!
+                            </div>
                         </div>
                         <div class="action-buttons center" style="border: none;">
                             <button class="btn-solid" onclick="fecharModal()">Continuar</button>
@@ -782,16 +790,19 @@
 
             if (state.mode === 'edit') {
                 state.confirmedData[module][state.targetIndex] = state.pendingItem;
+                state.pendingConfirmedItem = state.pendingItem;
                 state.pendingItem = null;
-                state.currentView = 'success_edit';
+                state.currentView = 'success_action';
                 renderAlteracaoModal();
                 return;
             }
 
             if (state.mode === 'add_direct') {
                 state.confirmedData[module].push(state.pendingItem);
+                state.pendingConfirmedItem = state.pendingItem;
                 state.pendingItem = null;
-                fecharModal();
+                state.currentView = 'success_action';
+                renderAlteracaoModal();
                 return;
             }
 
@@ -845,7 +856,6 @@
             }
 
             if (isPrincipal) {
-                // Dígito após o DDD (posição de índice 2)
                 const firstDigit = digits.charAt(2);
                 const isCelular = ['6', '7', '8', '9'].includes(firstDigit);
 
@@ -905,7 +915,6 @@
             if (btn) btn.disabled = !(cep.length === 9 && log.length > 2 && num.length > 0);
         }
 
-        // Inicialização com dados já carregados para simulação imediata
         window.addEventListener('DOMContentLoaded', () => {
             atualizarDashboard();
         });
